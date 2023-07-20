@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import { io } from 'socket.io-client'
+import {
+  Routes, Route, useNavigate, useParams
+} from 'react-router-dom'
 import Login from './components/Login'
 import roomService from './services/room'
 
@@ -17,16 +20,21 @@ function App() {
 
   const [user, setUser] = useState(null)
 
+  const navigate = useNavigate()
+
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedUser')
+    const loggedRoom = window.localStorage.getItem('loggedRoom')
 
     if(loggedUserJSON) {
       const savedUser = JSON.parse(loggedUserJSON)
       setUser(savedUser)
-      socket.emit("join_room", {roomId: savedUser.username})
-      setRoom(savedUser.username)
+    }
 
-      // setMessages(messages.concat({content: `Welcome, ${savedUser.username}`}))
+    if(loggedRoom) {
+      setRoom(loggedRoom)
+      socket.emit("join_room", {roomId: loggedRoom})
+      navigate(`/room/${loggedRoom}`)
     }
 
   }, [])
@@ -38,7 +46,6 @@ function App() {
 
         if(room !== null && roomHistory !== null){
           setMessages(roomHistory.messages)
-          // console.log(roomHistory, "asdfasdf")
         } else {
           setMessages([])
         }
@@ -49,7 +56,6 @@ function App() {
 
   useEffect(() => {
     socket.on("receive_message", (data) => {
-      // console.log(data)
       setMessages(messages.concat({message: data.message, sender: data.sender}))
     })
   }, [messages])
@@ -73,14 +79,18 @@ function App() {
     socket.emit("leave_room", {roomId: room})
     socket.emit("join_room", {roomId: k})
     setRoom(k)
+    navigate(`/room/${k}`)
+    window.localStorage.setItem('loggedRoom', k)
 
     if(!pastRooms.includes(k)){
       setPastRooms(pastRooms.concat(k))
 
-      const prev = await roomService.getRoom(room)
+      const prev = await roomService.getRoom(k)
+
+      console.log(prev)
 
       if(prev === null){
-        await roomService.addRoom({title: roomId})
+        await roomService.addRoom({title: k})
       }
 
     }
@@ -91,32 +101,12 @@ function App() {
     setInput(e.target.value)
   }
 
+  const historyDiv = () => {
+    if (user === null) {
+      return <div>Loading...</div>;
+    }
 
-  return (
-
-    <div className = {`main`}>
-
-      <h2> Chat Room </h2>
-
-      <Login user = {user} setUser = {setUser} />
-
-      <div className = {`roomId`}>
-        <input placeholder = "Join Room" value = {roomId} 
-          onChange = {(e) => setRoomId(e.target.value)} 
-          onKeyDown = {(e) => {if(e.key === 'Enter'){joinRoom()}}}
-        />
-
-        <i> {room === null ? null: `Joined room ${room}`} </i>
-
-        <button onClick = {() => joinRoom(user.username)}> Home </button>
-      </div>
-
-      <div className = {`conversations`}>
-        {pastRooms.map(pastRoom => (
-          <button key = {Math.floor(Math.random() * 100000)} onClick = {() => joinRoom(pastRoom)}> Join {pastRoom} </button>
-        ))}
-      </div>
-
+    return (
       <div className = {`history-content`}>
         {messages.slice().reverse().map(message => (
           <div key = {Math.floor(Math.random() * 100000)} className = {`message-container ${message.sender === user.username ? 'local' : (message.sender !== null ? 'foreign' : 'notif')}`}>
@@ -127,6 +117,39 @@ function App() {
           </div>
         ))}
       </div>
+    )
+  }
+
+
+  return (
+
+    <div className = {`main`}>
+
+      <h2> Chat Room </h2>
+
+      <Login user = {user} setUser = {setUser} setRoom = {setRoom} setPastRooms = {setPastRooms} />
+
+      <div className = {`roomId`}>
+        <input placeholder = "Join Room" value = {roomId} 
+          onChange = {(e) => setRoomId(e.target.value)} 
+          onKeyDown = {(e) => {if(e.key === 'Enter'){joinRoom()}}}
+        />
+
+        <i> {room === null ? null: `Joined room ${room}`} </i>
+
+        <button onClick = {user !== null ? () => joinRoom(user.username) : null}> Home </button>
+      </div>
+
+      <div className = {`conversations`}>
+        {pastRooms.map(pastRoom => (
+          <button key = {Math.floor(Math.random() * 100000)} onClick = {() => joinRoom(pastRoom)}> Join {pastRoom} </button>
+        ))}
+      </div>
+      
+
+      <Routes>
+        <Route path = "/room/:id" element = {historyDiv()} />
+      </Routes>
 
 
       <div className = {`message-box`}>

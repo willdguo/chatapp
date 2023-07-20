@@ -9,6 +9,8 @@ const getRoom = async (roomId) => {
 
 const addRoom = async(roomData) => {
     const response = await axios.post(baseUrl, roomData)
+    console.log("room added")
+    console.log(response)
     return response
 }
 

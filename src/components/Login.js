@@ -1,14 +1,17 @@
 import {useState} from 'react'
+import {
+    Routes, Route, Link, useNavigate, Navigate
+  } from 'react-router-dom'
 import loginService from '../services/login'
 import userService from '../services/user'
 
 
-const Login = ( {user, setUser}) => {
+const Login = ( {user, setUser, setRoom, setPastRooms}) => {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [errorMessage, setErrorMessage] = useState(null)
 
-    const [newuser, setNewuser] = useState(false)
+    const navigate = useNavigate()
 
 
     const handleUsername = (e) => {
@@ -26,14 +29,17 @@ const Login = ( {user, setUser}) => {
             const user = await loginService.login({ username, password })
 
             setUser(user)
+            setRoom(user.username)
             setUsername('')
             setPassword('')
 
             console.log('success')
 
             window.localStorage.setItem('loggedUser', JSON.stringify(user))
+            window.localStorage.setItem('loggedRoom', user.username)
 
             setErrorMessage(`Welcome, ${username}`)
+            navigate(`/room/${username}`)
 
             setTimeout(() => {
                 setErrorMessage(null)
@@ -85,10 +91,13 @@ const Login = ( {user, setUser}) => {
     }
 
     const logout = () => {
-        setUser(null)
+        navigate('/login')
         window.localStorage.clear()
 
         setErrorMessage('Adios')
+        setUser(null)
+        setRoom(null)
+        setPastRooms([])
 
         setTimeout(() => {
             setErrorMessage(null)
@@ -114,9 +123,7 @@ const Login = ( {user, setUser}) => {
 
             <button onClick = {handleLogin}> Submit </button>
 
-            <p className = 'newUser' onClick = {() => setNewuser(!newuser)}> 
-                New User? 
-            </p>
+            <Link to = "/newuser"> newuser </Link>
 
             <div className = "error-msg">
                 {errorMessage}
@@ -143,9 +150,7 @@ const Login = ( {user, setUser}) => {
 
             <button onClick = {handleCreateUser}> Submit </button>
 
-            <p className = 'newUser' onClick = {() => setNewuser(!newuser)}> 
-                Log In 
-            </p>
+            <Link to = "/login"> login </Link>
 
             <div className = "error-msg">
                 {errorMessage}
@@ -153,22 +158,28 @@ const Login = ( {user, setUser}) => {
         </div>
     )
 
-    return (
+    const validUser = () => (
         <div>
-            {user === null
-                ? (newuser === false
-                    ? loginForm()
-                    : newUserForm()
-                )
-                : (
-                    <div>
-                        <p> Hello, {user.username} </p>
-                        <button onClick = {logout}> Logout </button>
-                    </div>
-                )
-            }
+            <p> Hello, {user.username} </p>
+            <button onClick = {logout}> Logout </button>
+        </div>
+    )
+
+    return (
+
+        <div>
+
+            <Routes>
+                <Route path = "/newuser" element = {newUserForm()}/>
+                <Route path = "/login" element = {loginForm()}/>
+                <Route path = "/" element = {<Navigate replace to="/login" />}/>
+                <Route path = "/room/:id" element = {user !== null ? validUser() : <Navigate replace to = {`/login`} />} />
+            </Routes>
 
         </div>
+
+
+
     )
 }
 
