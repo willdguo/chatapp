@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { io } from 'socket.io-client'
 import {
-  Routes, Route, useNavigate, useParams
+  Routes, Route, useNavigate
 } from 'react-router-dom'
 import Login from './components/Login'
+import RoomHistory from './components/RoomHistory'
 import roomService from './services/room'
 
 const socket = io.connect("http://localhost:3001")
@@ -24,17 +25,11 @@ function App() {
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedUser')
-    const loggedRoom = window.localStorage.getItem('loggedRoom')
+    // const loggedRoom = window.localStorage.getItem('loggedRoom') // Move to RoomHistory
 
     if(loggedUserJSON) {
       const savedUser = JSON.parse(loggedUserJSON)
       setUser(savedUser)
-    }
-
-    if(loggedRoom) {
-      setRoom(loggedRoom)
-      socket.emit("join_room", {roomId: loggedRoom})
-      navigate(`/room/${loggedRoom}`)
     }
 
   }, [])
@@ -101,33 +96,13 @@ function App() {
     setInput(e.target.value)
   }
 
-  const historyDiv = () => {
-    if (user === null) {
-      return <div>Loading...</div>;
-    }
-
-    return (
-      <div className = {`history-content`}>
-        {messages.slice().reverse().map(message => (
-          <div key = {Math.floor(Math.random() * 100000)} className = {`message-container ${message.sender === user.username ? 'local' : (message.sender !== null ? 'foreign' : 'notif')}`}>
-            <div className = {`sender`}>
-              {message.sender}
-            </div>
-            {message.message}
-          </div>
-        ))}
-      </div>
-    )
-  }
-
-
   return (
 
     <div className = {`main`}>
 
       <h2> Chat Room </h2>
 
-      <Login user = {user} setUser = {setUser} setRoom = {setRoom} setPastRooms = {setPastRooms} />
+      <Login user = {user} setUser = {setUser} room = {room} setRoom = {setRoom} setPastRooms = {setPastRooms} />
 
       <div className = {`roomId`}>
         <input placeholder = "Join Room" value = {roomId} 
@@ -148,7 +123,7 @@ function App() {
       
 
       <Routes>
-        <Route path = "/room/:id" element = {historyDiv()} />
+        <Route path = "/room/:id" element = {<RoomHistory user = {user} messages = {messages} setRoom = {setRoom} socket = {socket}/>} />
       </Routes>
 
 

@@ -6,7 +6,7 @@ import loginService from '../services/login'
 import userService from '../services/user'
 
 
-const Login = ( {user, setUser, setRoom, setPastRooms}) => {
+const Login = ( {user, setUser, room, setRoom, setPastRooms}) => {
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
     const [errorMessage, setErrorMessage] = useState(null)
@@ -104,33 +104,36 @@ const Login = ( {user, setUser, setRoom, setPastRooms}) => {
         }, 5000)
     }
 
-    const loginForm = () => (
+    const loginForm = () => {
+        // console.log("login form rendered")
 
-        <div className = "login-container">
-            <h2> Sign In </h2>
+        return(
+            <div className = "login-container">
+                <h2> Sign In </h2>
 
-            <p> Username </p>
-            <input value = {username} 
-                onChange = {handleUsername}
-                onKeyDown = {(e) => {if(e.key === 'Enter'){handleLogin()}}}    
-            />
+                <p> Username </p>
+                <input value = {username} 
+                    onChange = {handleUsername}
+                    onKeyDown = {(e) => {if(e.key === 'Enter'){handleLogin()}}}    
+                />
 
-            <p>Password</p>
-            <input value = {password} type = 'password' 
-                onChange = {handlePassword}
-                onKeyDown = {(e) => {if(e.key === 'Enter'){handleLogin()}}}
-            />
+                <p>Password</p>
+                <input value = {password} type = 'password' 
+                    onChange = {handlePassword}
+                    onKeyDown = {(e) => {if(e.key === 'Enter'){handleLogin()}}}
+                />
 
-            <button onClick = {handleLogin}> Submit </button>
+                <button onClick = {handleLogin}> Submit </button>
 
-            <Link to = "/newuser"> newuser </Link>
+                <Link to = "/newuser"> newuser </Link>
 
-            <div className = "error-msg">
-                {errorMessage}
+                <div className = "error-msg">
+                    {errorMessage}
+                </div>
+
             </div>
-
-        </div>
-    )
+        )
+    }
 
     const newUserForm = () => (
         <div className = "login-container">
@@ -171,9 +174,10 @@ const Login = ( {user, setUser, setRoom, setPastRooms}) => {
 
             <Routes>
                 <Route path = "/newuser" element = {newUserForm()}/>
-                <Route path = "/login" element = {loginForm()}/>
+                <Route path = "/login" element = {user === null ? loginForm() : <Navigate replace to = {`/room/${user.username}`} />}/>
                 <Route path = "/" element = {<Navigate replace to="/login" />}/>
-                <Route path = "/room/:id" element = {user !== null ? validUser() : <Navigate replace to = {`/login`} />} />
+                <Route path = "/room/:id" element = {user !== null ? validUser() : loginForm()} />
+                <Route path = "*" element = {<Navigate to = "/login"/>} />
             </Routes>
 
         </div>
