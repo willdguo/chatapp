@@ -4,7 +4,9 @@ import {
 } from 'react-router-dom' 
  
 
-const RoomHistory = ({user, messages, setRoom, socket}) => {
+const RoomHistory = ({user, messages, setRoom, setMessages}) => {
+    const [input, setInput] = useState('')
+
     // const testid = useParams().id
     const urlRoom = useParams().id
     const navigate = useNavigate()
@@ -20,20 +22,32 @@ const RoomHistory = ({user, messages, setRoom, socket}) => {
       if(urlRoom !== null){
         console.log(`room from url: ${urlRoom}`)
         setRoom(urlRoom)
-        socket.emit("join_room", {roomId: urlRoom})
       } else {
         const loggedRoom = window.localStorage.getItem('loggedRoom')
 
         if(loggedRoom) {
           console.log("shit logged room")
           setRoom(loggedRoom)
-          socket.emit("join_room", {roomId: loggedRoom})
           navigate(`/room/${loggedRoom}`)
         }
 
       }
 
     }, [user])
+
+    const handleInput = (e) => {
+      setInput(e.target.value)
+    }
+
+    const sendInput = async () => {
+
+      if(input.trim()){
+        const newMessage = {message: input, sender: user.username}
+        setMessages(messages.concat(newMessage))
+        setInput('')
+      }
+  
+    }
 
     if(user !== null){
       return (
@@ -46,6 +60,12 @@ const RoomHistory = ({user, messages, setRoom, socket}) => {
               {message.message}
             </div>
           ))}
+
+
+          <div className = {`message-box`}>
+            <input placeholder="Message" value = {input} onChange = {handleInput} onKeyDown = {(e) => {if(e.key === 'Enter'){sendInput()}}}/>
+            <button onClick = {sendInput}> {'>>'} </button>
+          </div>
         </div>
       )
     }
